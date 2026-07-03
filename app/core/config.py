@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Optional, Union
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "FastAPI Standard Backend"
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = "your-super-secret-key-change-me-in-production"
+    ADMIN_CREATION_KEY: Optional[str] = "super-secret-admin-creation-key"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     DATABASE_URL: str = "sqlite:///./sql_app.db"
 

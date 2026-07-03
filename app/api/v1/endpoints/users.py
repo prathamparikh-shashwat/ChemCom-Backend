@@ -1,8 +1,9 @@
-from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Any, List, Optional
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api import deps
+from app.core.config import settings
 from app.crud.crud_user import crud_user
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, UserUpdate
@@ -60,6 +61,48 @@ def signup_user(
         )
     # Ensure public signup doesn't allow registering a superuser directly
     user_in.is_superuser = False
+    return crud_user.create(db, obj_in=user_in)
+
+
+@router.post("/admin", response_model=UserResponse)
+def create_admin_user(
+    *,
+    db: Session = Depends(deps.get_db),
+    user_in: UserCreate,
+    x_admin_creation_key: Optional[str] = Header(None),
+) -> Any:
+    """
+    Create a new admin user.
+    Allows creation if the database is currently empty (contains no users)
+    or if the provided x-admin-creation-key matches settings.ADMIN_CREATION_KEY or settings.SECRET_KEY.
+    """
+    # Check if database is empty
+    user_count = db.query(User).count()
+    
+    # Check if creation key is valid
+    key_is_valid = False
+    if x_admin_creation_key:
+        if settings.ADMIN_CREATION_KEY and x_admin_creation_key == settings.ADMIN_CREATION_KEY:
+            key_is_valid = True
+        elif x_admin_creation_key == settings.SECRET_KEY:
+            key_is_valid = True
+
+    # Allow if database is empty OR valid key is provided
+    if user_count > 0 and not key_is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin creation is forbidden. Please provide a valid X-Admin-Creation-Key header or use the CLI script.",
+        )
+
+    user = crud_user.get_by_email(db, email=user_in.email)
+    if user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The user with this username/email already exists.",
+        )
+    
+    # Force superuser to be True
+    user_in.is_superuser = True
     return crud_user.create(db, obj_in=user_in)
 
 
