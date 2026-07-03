@@ -4,8 +4,10 @@ from sqlalchemy.orm import Session
 
 from app.api import deps
 from app.core.config import settings
+from app.crud.crud_order import crud_order
 from app.crud.crud_user import crud_user
 from app.models.user import User
+from app.schemas.order import OrderResponse
 from app.schemas.user import UserCreate, UserResponse, UserUpdate
 
 router = APIRouter()
@@ -145,3 +147,27 @@ def read_user_by_id(
             detail="The user with this ID does not exist.",
         )
     return user
+
+
+@router.get("/{user_id}/orders", response_model=List[OrderResponse])
+def read_user_orders(
+    user_id: int,
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Get all orders belonging to a specific user by userid.
+    Accessible by the user themselves or by a superuser.
+    """
+    if current_user.id != user_id and not current_user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The user doesn't have enough privileges",
+        )
+    user = crud_user.get(db, id=user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The user with this ID does not exist.",
+        )
+    return crud_order.get_by_email(db, email=user.email)

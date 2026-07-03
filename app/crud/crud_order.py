@@ -21,6 +21,17 @@ class CRUDOrder:
             .all()
         )
 
+    def get_by_email(self, db: Session, email: str, *, skip: int = 0, limit: int = 100) -> List[Order]:
+        """Fetch all orders by customer email, ordered by newest first with pagination."""
+        return (
+            db.query(Order)
+            .filter(Order.customer_email == email)
+            .order_by(Order.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
     def create(self, db: Session, *, obj_in: OrderCreate) -> Order:
         """Create a new customer order with default 'Pending' status."""
         # Convert List[OrderItem] pydantic models to dicts for JSON database storage

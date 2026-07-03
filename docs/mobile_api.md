@@ -198,6 +198,48 @@ Updates logged-in user profile or password.
 
 ---
 
+### F. Get User Orders
+Fetches all orders associated with a specific user by their user ID.
+
+* **Method**: `GET`
+* **Path**: `/api/v1/users/{user_id}/orders`
+* **Headers**:
+  * `Authorization: Bearer <your_access_token>`
+* **Success Response (`200 OK`)**:
+  ```json
+  [
+    {
+      "id": 4,
+      "customer_name": "Jane Doe",
+      "customer_email": "customer@example.com",
+      "items": [
+        {
+          "name": "Heavy Duty ChemCom Glove",
+          "quantity": 2,
+          "price": 14.99
+        }
+      ],
+      "total_amount": 29.98,
+      "status": "Pending",
+      "created_at": "2026-07-03T10:00:00Z"
+    }
+  ]
+  ```
+* **Error Response (`403 Forbidden`)**:
+  ```json
+  {
+    "detail": "The user doesn't have enough privileges"
+  }
+  ```
+* **Error Response (`404 Not Found`)**:
+  ```json
+  {
+    "detail": "The user with this ID does not exist."
+  }
+  ```
+
+---
+
 ## 4. React Native Integration Snippets
 
 Here are examples using the built-in `fetch` API in JavaScript/TypeScript.
@@ -299,4 +341,28 @@ const submitOrder = async (customerName, email, cartItems, total) => {
     console.error('Network Error:', error);
   }
 };
+
+### 4. Fetching User Orders
+```javascript
+const fetchUserOrders = async (userId, userToken) => {
+  try {
+    const response = await fetch(`http://192.168.1.100:8000/api/v1/users/${userId}/orders`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${userToken}`,
+      },
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      console.log('User Orders:', data);
+      return data;
+    } else {
+      console.error('Failed to fetch orders:', data.detail);
+    }
+  } catch (error) {
+    console.error('Network Error:', error);
+  }
+};
+```
 ```
