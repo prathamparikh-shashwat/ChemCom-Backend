@@ -34,14 +34,36 @@ class CRUDOrder:
 
     def create(self, db: Session, *, obj_in: OrderCreate) -> Order:
         """Create a new customer order with default 'Pending' status."""
-        # Convert List[OrderItem] pydantic models to dicts for JSON database storage
-        serialized_items = [item.model_dump() for item in obj_in.items]
+        from app.models.product import Product
+        from app.models.order_item import OrderItem
+
+        order_items = []
+        total_amount = 0.0
+
+        for item_in in obj_in.items:
+            product = db.query(Product).filter(Product.id == item_in.product_id).first()
+            if not product:
+                raise ValueError(f"Product with ID {item_in.product_id} not found.")
+            if not product.is_active:
+                raise ValueError(f"Product '{product.name}' (ID {product.id}) is not active.")
+            
+            item_price = product.price
+            item_total = item_price * item_in.quantity
+            total_amount += item_total
+
+            order_item = OrderItem(
+                product_id=product.id,
+                name=product.name,
+                quantity=item_in.quantity,
+                price=item_price,
+            )
+            order_items.append(order_item)
         
         db_obj = Order(
             customer_name=obj_in.customer_name,
             customer_email=obj_in.customer_email,
-            items=serialized_items,
-            total_amount=obj_in.total_amount,
+            items=order_items,
+            total_amount=total_amount,
             status="Pending",
         )
         db.add(db_obj)

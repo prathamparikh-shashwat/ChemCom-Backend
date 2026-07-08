@@ -20,7 +20,13 @@ def create_order(
     Submit a customer order.
     This is a public endpoint accessible by the React Native client app.
     """
-    return crud_order.create(db=db, obj_in=order_in)
+    try:
+        return crud_order.create(db=db, obj_in=order_in)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
 
 
 @router.get("/", response_model=List[OrderResponse])

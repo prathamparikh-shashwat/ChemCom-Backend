@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     ADMIN_CREATION_KEY: Optional[str] = "super-secret-admin-creation-key"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     DATABASE_URL: str = "sqlite:///./sql_app.db"
+    CLOUDINARY_URL: Optional[str] = None
 
     # BACKEND_CORS_ORIGINS is a list of allowed origins.
     # Can be configured as a comma-separated string in .env: "http://localhost:3000,http://localhost:8000"
